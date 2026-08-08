@@ -2,7 +2,7 @@ import { Check, ChevronDown, Filter, RotateCcw, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useUi } from '../UiContext';
 
-function DropdownFilter({ label, value, options, onChange }) {
+export function DropdownFilter({ label, value, options, onChange, placeholder, disabled = false }) {
   const { isArabic } = useUi();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -26,13 +26,13 @@ function DropdownFilter({ label, value, options, onChange }) {
 
   return <div className="filter-field dropdown-filter" ref={rootRef}>
     <span>{label}</span>
-    <button type="button" className={open ? 'dropdown-trigger open' : 'dropdown-trigger'} onClick={() => setOpen(current => !current)}>
-      <b>{value || (isArabic ? 'الكل' : 'All')}</b><ChevronDown size={16}/>
+    <button type="button" disabled={disabled} className={`${open ? 'dropdown-trigger open' : 'dropdown-trigger'}${disabled ? ' disabled' : ''}`} onClick={() => !disabled && setOpen(current => !current)}>
+      <b>{value || placeholder || (isArabic ? 'الكل' : 'All')}</b><ChevronDown size={16}/>
     </button>
     {open && <div className="dropdown-menu">
       {options.length > 7 && <label className="dropdown-search"><Search size={15}/><input autoFocus value={query} onChange={event => setQuery(event.target.value)} placeholder={isArabic ? `ابحث في ${label}...` : `Search ${label}...`}/></label>}
       <div className="dropdown-options">
-        <button type="button" className={!value ? 'selected' : ''} onClick={() => choose('')}><span>{isArabic ? 'الكل' : 'All'}</span>{!value && <Check size={15}/>}</button>
+        <button type="button" className={!value ? 'selected' : ''} onClick={() => choose('')}><span>{placeholder || (isArabic ? 'الكل' : 'All')}</span>{!value && <Check size={15}/>}</button>
         {visibleOptions.map(option => <button type="button" className={value === option ? 'selected' : ''} onClick={() => choose(option)} key={option}><span>{option}</span>{value === option && <Check size={15}/>}</button>)}
         {!visibleOptions.length && <div className="no-options">لا توجد نتائج</div>}
       </div>
@@ -61,6 +61,7 @@ export default function LaptopFilters({ filters, setFilters, options, resultCoun
       <DropdownFilter label={isArabic ? 'المعالج' : 'Processor'} value={filters.processor} options={options.processors} onChange={value => update('processor', value)}/>
       <DropdownFilter label={isArabic ? 'الرام' : 'RAM'} value={filters.ram} options={options.rams} onChange={value => update('ram', value)}/>
       <DropdownFilter label={isArabic ? 'التخزين' : 'Storage'} value={filters.storage} options={options.storages} onChange={value => update('storage', value)}/>
+      <DropdownFilter label={isArabic ? 'الليستة' : 'List'} value={filters.listName} options={options.listNames} onChange={value => update('listName', value)}/>
       <div className="filter-field price-filter">
         <span>{isArabic ? 'فئة السعر' : 'Price range'}</span>
         <div className="price-buttons">

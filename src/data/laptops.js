@@ -17,7 +17,7 @@ export const bands = [
   { label: 'أكثر من 25 ألف', min: 25000, max: Infinity, color: '#637d72' },
 ];
 
-export const emptyForm = { brand: '', model: '', processor: '', ram: '', storage: '', price: '', quantity: '' };
+export const emptyForm = { brand: '', model: '', processor: '', ram: '', storage: '', listName: '', cost: '', price: '', quantity: '' };
 export const money = (n, language = 'ar') => new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : 'en-EG', {
   style: 'currency',
   currency: 'EGP',

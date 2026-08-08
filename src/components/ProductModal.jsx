@@ -26,6 +26,8 @@ export default function ProductModal({ form, setForm, editing, close, submit, on
         </div>
         <div className="form-section-head stock-head"><b>{isArabic ? 'السعر والمخزون' : 'Price and stock'}</b><span>{isArabic ? 'حدد سعر الجهاز والكمية المتاحة' : 'Set the price and available quantity'}</span></div>
         <div className="form-grid stock-grid">
+          {field('listName', isArabic ? 'اسم الليستة' : 'List name', 'text', isArabic ? 'مثال: ليستة أغسطس' : 'e.g. August list')}
+          {field('cost', isArabic ? 'التكلفة بالجنيه' : 'Cost (EGP)', 'number', isArabic ? 'مثال: 12000' : 'e.g. 12000')}
           {field('price', isArabic ? 'السعر بالجنيه' : 'Price (EGP)', 'number', isArabic ? 'مثال: 15000' : 'e.g. 15000')}
           {field('quantity', isArabic ? 'الكمية المتاحة' : 'Available quantity', 'number', isArabic ? 'مثال: 5' : 'e.g. 5')}
         </div>

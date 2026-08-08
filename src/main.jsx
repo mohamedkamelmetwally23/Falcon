@@ -4,13 +4,19 @@ import * as XLSX from 'xlsx';
 import Header from './components/Header';
 import Products from './components/Products';
 import ProductModal from './components/ProductModal';
+import Orders from './components/Orders';
+import Sidebar from './components/Sidebar';
+import AuthPage from './components/AuthPage';
+import CreateOrder from './components/CreateOrder';
+import Returns from './components/Returns';
 import { emptyForm } from './data/laptops';
 import { parseLaptopSheet } from './utils/excelParser';
 import { laptopApi } from './services/laptopApi';
+import { orderApi } from './services/api';
 import { UiProvider } from './UiContext';
 import './styles.css';
 
-const initialFilters = { search: '', model: '', processor: '', ram: '', storage: '', priceRange: '' };
+const initialFilters = { search: '', model: '', processor: '', ram: '', storage: '', listName: '', priceRange: '' };
 const unique = (items, key) => [...new Set(items.map(item => item[key]).filter(Boolean))].sort();
 const priceRanges = {
   'من 5 إلى 10 آلاف': [5000, 10000],
@@ -28,10 +34,16 @@ function matchesFilters(item, filters, excludedFilter = '') {
     && (!filters.processor || excludedFilter === 'processor' || item.processor === filters.processor)
     && (!filters.ram || excludedFilter === 'ram' || item.ram === filters.ram)
     && (!filters.storage || excludedFilter === 'storage' || item.storage === filters.storage)
+    && (!filters.listName || excludedFilter === 'listName' || item.listName === filters.listName)
     && (!selectedRange || excludedFilter === 'priceRange' || (item.price >= selectedRange[0] && item.price < selectedRange[1]));
 }
 
 function App() {
+  const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem('voltio-user')); } catch { return null; } });
+  const [page, setPageState] = useState(() => location.hash.slice(1) || 'inventory');
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState('');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -42,11 +54,23 @@ function App() {
   const inputRef = useRef();
 
   useEffect(() => {
+    if (!user) { setLoading(false); return; }
     laptopApi.list()
       .then(setItems)
       .catch(requestError => setError(requestError.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user, page]);
+  useEffect(() => {
+    if (!user || page !== 'orders') return;
+    setOrdersLoading(true); setOrdersError('');
+    orderApi.list().then(setOrders).catch(e => setOrdersError(e.message)).finally(() => setOrdersLoading(false));
+  }, [user, page]);
+  const setPage = next => { setPageState(next); location.hash = next; };
+  const onAuth = result => {
+    localStorage.setItem('voltio-token', result.token); localStorage.setItem('voltio-user', JSON.stringify(result.user)); setUser(result.user);
+    setPage(result.user.role === 'admin' ? 'inventory' : 'create-order');
+  };
+  const logout = () => { localStorage.removeItem('voltio-token'); localStorage.removeItem('voltio-user'); setUser(null); setItems([]); setOrders([]); location.hash = ''; };
   const availableItems = useMemo(() => items.filter(item => Number(item.quantity) > 0), [items]);
   const filterOptions = useMemo(() => {
     const availableFor = key => availableItems.filter(item => matchesFilters(item, filters, key));
@@ -56,6 +80,7 @@ function App() {
       processors: unique(availableFor('processor'), 'processor'),
       rams: unique(availableFor('ram'), 'ram'),
       storages: unique(availableFor('storage'), 'storage'),
+      listNames: unique(availableFor('listName'), 'listName'),
       priceRanges: Object.entries(priceRanges)
         .filter(([, [min, max]]) => priceItems.some(item => item.price >= min && item.price < max))
         .map(([label]) => label),
@@ -67,7 +92,7 @@ function App() {
   const openEdit = item => { setEditing(item.id); setForm(item); setModal(true); };
   const submit = async e => {
     e.preventDefault();
-    const clean = { ...form, price: Number(form.price), quantity: Number(form.quantity) };
+    const clean = { ...form, cost: Number(form.cost), price: Number(form.price), quantity: Number(form.quantity) };
     try {
       setError('');
       const saved = editing ? await laptopApi.update(editing, clean) : await laptopApi.create(clean);
@@ -105,10 +130,16 @@ function App() {
     XLSX.writeFile(book, 'laptops-stock.xlsx');
   };
 
+  if (!user) return <AuthPage onAuth={onAuth}/>;
+  const safePage = user.role === 'admin' ? (['inventory', 'orders', 'returns'].includes(page) ? page : 'inventory') : (['create-order', 'orders'].includes(page) ? page : 'create-order');
   return <div className="app-shell">
+    <Sidebar page={safePage} setPage={setPage} user={user} logout={logout}/>
     <main className="single-page">
-      <Header openAdd={openAdd}/>
-      <Products items={filtered} allCount={availableItems.length} loading={loading} error={error} filters={filters} setFilters={setFilters} filterOptions={filterOptions} resetFilters={() => setFilters(initialFilters)} openEdit={openEdit} remove={remove} importFile={importFile} exportData={exportData} inputRef={inputRef}/>
+      <Header openAdd={openAdd} page={safePage} user={user}/>
+      {safePage === 'inventory' && <Products items={filtered} inventoryItems={availableItems} allCount={availableItems.length} loading={loading} error={error} filters={filters} setFilters={setFilters} filterOptions={filterOptions} resetFilters={() => setFilters(initialFilters)} openEdit={openEdit} remove={remove} importFile={importFile} exportData={exportData} inputRef={inputRef}/>} 
+      {safePage === 'create-order' && <CreateOrder products={availableItems} onCreated={() => setPage('orders')}/>} 
+      {safePage === 'orders' && <Orders orders={orders} setOrders={setOrders} isAdmin={user.role === 'admin'} loading={ordersLoading} error={ordersError}/>} 
+      {safePage === 'returns' && <Returns/>}
     </main>
     {modal && <ProductModal
       form={form}

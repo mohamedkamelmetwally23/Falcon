@@ -41,6 +41,8 @@ export function parseLaptopSheet(sheet, XLSX) {
         processor: firstCell,
         ram,
         storage,
+        listName: text(row[4]),
+        cost: number(row[3]),
         price,
         quantity,
       });
