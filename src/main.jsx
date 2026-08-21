@@ -13,6 +13,8 @@ import { emptyForm } from './data/laptops';
 import { parseLaptopSheet } from './utils/excelParser';
 import { laptopApi } from './services/laptopApi';
 import { orderApi } from './services/api';
+import { customerApi } from './services/api';
+import Customers from './components/Customers';
 import { UiProvider } from './UiContext';
 import './styles.css';
 
@@ -44,6 +46,9 @@ function App() {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState('');
+  const [customers, setCustomers] = useState([]);
+  const [customersLoading, setCustomersLoading] = useState(false);
+  const [customersError, setCustomersError] = useState('');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,7 +66,12 @@ function App() {
       .finally(() => setLoading(false));
   }, [user, page]);
   useEffect(() => {
-    if (!user || page !== 'orders') return;
+    if (!user || (page !== 'customers' && page !== 'create-order')) return;
+    setCustomersLoading(true); setCustomersError('');
+    customerApi.list().then(setCustomers).catch(e => setCustomersError(e.message)).finally(() => setCustomersLoading(false));
+  }, [user, page]);
+  useEffect(() => {
+    if (!user || user.role !== 'admin' || page !== 'orders') return;
     setOrdersLoading(true); setOrdersError('');
     orderApi.list().then(setOrders).catch(e => setOrdersError(e.message)).finally(() => setOrdersLoading(false));
   }, [user, page]);
@@ -131,14 +141,15 @@ function App() {
   };
 
   if (!user) return <AuthPage onAuth={onAuth}/>;
-  const safePage = user.role === 'admin' ? (['inventory', 'orders', 'returns'].includes(page) ? page : 'inventory') : (['create-order', 'orders'].includes(page) ? page : 'create-order');
+  const safePage = user.role === 'admin' ? (['inventory', 'orders', 'returns', 'customers'].includes(page) ? page : 'inventory') : 'create-order';
   return <div className="app-shell">
     <Sidebar page={safePage} setPage={setPage} user={user} logout={logout}/>
     <main className="single-page">
       <Header openAdd={openAdd} page={safePage} user={user}/>
       {safePage === 'inventory' && <Products items={filtered} inventoryItems={availableItems} allCount={availableItems.length} loading={loading} error={error} filters={filters} setFilters={setFilters} filterOptions={filterOptions} resetFilters={() => setFilters(initialFilters)} openEdit={openEdit} remove={remove} importFile={importFile} exportData={exportData} inputRef={inputRef}/>} 
-      {safePage === 'create-order' && <CreateOrder products={availableItems} onCreated={() => setPage('orders')}/>} 
+      {safePage === 'create-order' && <CreateOrder products={availableItems} customers={customers} customersLoading={customersLoading} customersError={customersError}/>} 
       {safePage === 'orders' && <Orders orders={orders} setOrders={setOrders} isAdmin={user.role === 'admin'} loading={ordersLoading} error={ordersError}/>} 
+      {safePage === 'customers' && <Customers customers={customers} setCustomers={setCustomers} loading={customersLoading} error={customersError}/>} 
       {safePage === 'returns' && <Returns/>}
     </main>
     {modal && <ProductModal

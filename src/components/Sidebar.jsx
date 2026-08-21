@@ -1,4 +1,4 @@
-import { Laptop, LogOut, PackageCheck, PackagePlus, RotateCcw } from 'lucide-react';
+import { Laptop, LogOut, PackageCheck, PackagePlus, RotateCcw, Users } from 'lucide-react';
 import logo from '../assets/voltio-logo.png';
 import { useUi } from '../UiContext';
 
@@ -11,9 +11,9 @@ export default function Sidebar({ page, setPage, user, logout }) {
         <button className={page === 'inventory' ? 'active' : ''} onClick={() => setPage('inventory')}><Laptop size={19}/><span>{isArabic ? 'المخزون' : 'Inventory'}</span></button>
         <button className={page === 'orders' ? 'active' : ''} onClick={() => setPage('orders')}><PackageCheck size={19}/><span>{isArabic ? 'الفواتير المعلقة' : 'Invoices'}</span></button>
         <button className={page === 'returns' ? 'active' : ''} onClick={() => setPage('returns')}><RotateCcw size={19}/><span>{isArabic ? 'المرتجعات' : 'Returns'}</span></button>
+        <button className={page === 'customers' ? 'active' : ''} onClick={() => setPage('customers')}><Users size={19}/><span>{isArabic ? 'العملاء' : 'Customers'}</span></button>
       </> : <>
         <button className={page === 'create-order' ? 'active' : ''} onClick={() => setPage('create-order')}><PackagePlus size={19}/><span>{isArabic ? 'فاتورة جديدة' : 'New invoice'}</span></button>
-        <button className={page === 'orders' ? 'active' : ''} onClick={() => setPage('orders')}><PackageCheck size={19}/><span>{isArabic ? 'فواتيري' : 'My invoices'}</span></button>
       </>}
     </nav>
     <button className="sidebar-logout" onClick={logout}><LogOut size={18}/><span>{isArabic ? 'تسجيل الخروج' : 'Logout'}</span></button>
