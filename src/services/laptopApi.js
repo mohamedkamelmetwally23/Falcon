@@ -5,6 +5,8 @@ async function request(path = '', options = {}) {
   const timeout = setTimeout(() => controller.abort(), 15000);
   try {
     const headers = { ...options.headers, Authorization: `Bearer ${localStorage.getItem('voltio-token') || ''}` };
+    const branchId = localStorage.getItem('voltio-branch-id');
+    if (branchId) headers['X-Branch-Id'] = branchId;
     if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
     const response = await fetch(`${API_URL}${path}`, {
       headers,

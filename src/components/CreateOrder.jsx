@@ -9,7 +9,7 @@ const fields = ['brand', 'model', 'processor', 'ram', 'storage'];
 const emptyChoice = { brand: '', model: '', processor: '', ram: '', storage: '' };
 const today = () => { const date = new Date(); date.setMinutes(date.getMinutes() - date.getTimezoneOffset()); return date.toISOString().slice(0, 10); };
 
-export default function CreateOrder({ products, customers = [], customersLoading, customersError, onCreated }) {
+export default function CreateOrder({ products, customers = [], customersLoading, customersError, onCreated, autoConfirm = false }) {
   const { isArabic } = useUi();
   const [choice, setChoice] = useState(emptyChoice);
   const [quantity, setQuantity] = useState(1);
@@ -56,15 +56,16 @@ export default function CreateOrder({ products, customers = [], customersLoading
     event.preventDefault(); setSaving(true); setError('');
     try {
       const customer = customers.find(item => item.id === customerId);
-      await orderApi.create({ customerId, customerName: customer?.name, invoiceDate, notes: notes.trim(), items: items.map(item => ({ laptopId: item.laptopId, quantity: item.quantity })) });
-      setMessage(isArabic ? 'تم إرسال الفاتورة للمدير' : 'Invoice sent to manager');
+      const created = await orderApi.create({ customerId, customerName: customer?.name, invoiceDate, notes: notes.trim(), items: items.map(item => ({ laptopId: item.laptopId, quantity: item.quantity })) });
+      if (autoConfirm) await orderApi.confirm(created.id);
+      setMessage(autoConfirm ? (isArabic ? 'تم إنشاء وتأكيد الفاتورة' : 'Invoice created and confirmed') : (isArabic ? 'تم إرسال الفاتورة للمدير' : 'Invoice sent to manager'));
       setChoice(emptyChoice); setQuantity(1); setItems([]); setEditingId(''); setCustomerId(''); setInvoiceDate(today()); setNotes('');
       setTimeout(() => onCreated?.(), 700);
     } catch (requestError) { setError(requestError.message); } finally { setSaving(false); }
   };
 
   return <section className="invoice-page">
-    <div className="invoice-page-head"><div className="invoice-head-icon"><ShoppingBag/></div><div><span className="invoice-eyebrow">VOLTIO INVOICE</span><h2>{isArabic ? 'إنشاء فاتورة جديدة' : 'Create a new invoice'}</h2><p>{isArabic ? 'أضف بنود الفاتورة وأرسلها للمدير للمراجعة.' : 'Add invoice items and send it to the manager for review.'}</p></div></div>
+    <div className="invoice-page-head"><div className="invoice-head-icon"><ShoppingBag/></div><div><span className="invoice-eyebrow">VOLTIO INVOICE</span><h2>{isArabic ? 'إنشاء فاتورة جديدة' : 'Create a new invoice'}</h2><p>{autoConfirm ? (isArabic ? 'أضف بنود الفاتورة وسيتم اعتمادها مباشرة.' : 'Add invoice items and confirm it directly.') : (isArabic ? 'أضف بنود الفاتورة وأرسلها للمدير للمراجعة.' : 'Add invoice items and send it to the manager for review.')}</p></div></div>
     <form onSubmit={submit} className="invoice-layout">
       <div className="invoice-main">
         <div className="invoice-card">
@@ -99,7 +100,7 @@ export default function CreateOrder({ products, customers = [], customersLoading
         {!!items.length && <div className="invoice-cart-total"><span>{isArabic ? 'إجمالي الأوردر' : 'Order total'}</span><strong>{totalQuantity} <small>{isArabic ? 'جهاز' : 'units'}</small></strong></div>}
         {error && <div className="status-message error">{error}</div>}{message && <div className="order-success"><CheckCircle2/>{message}</div>}
         <div className="invoice-cart-actions">
-          <button className="primary" disabled={!items.length || !customerId || !invoiceDate || saving}>{saving ? (isArabic ? 'جاري الإرسال...' : 'Sending...') : (isArabic ? `إرسال للمدير (${items.length})` : `Send to manager (${items.length})`)}</button>
+          <button className="primary" disabled={!items.length || !customerId || !invoiceDate || saving}>{saving ? (isArabic ? 'جاري الحفظ...' : 'Saving...') : autoConfirm ? (isArabic ? `إنشاء الفاتورة (${items.length})` : `Create invoice (${items.length})`) : (isArabic ? `إرسال للمدير (${items.length})` : `Send to manager (${items.length})`)}</button>
           <button type="button" className="secondary" onClick={() => { setChoice(emptyChoice); setQuantity(1); setItems([]); setEditingId(''); setCustomerId(''); setInvoiceDate(today()); setNotes(''); }}>{isArabic ? 'مسح الكل' : 'Clear all'}</button>
         </div>
       </aside>

@@ -15,6 +15,7 @@ import { laptopApi } from './services/laptopApi';
 import { orderApi } from './services/api';
 import { customerApi } from './services/api';
 import Customers from './components/Customers';
+import BranchDashboard from './components/BranchDashboard';
 import { UiProvider } from './UiContext';
 import './styles.css';
 
@@ -42,6 +43,7 @@ function matchesFilters(item, filters, excludedFilter = '') {
 
 function App() {
   const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem('voltio-user')); } catch { return null; } });
+  const [selectedBranch, setSelectedBranch] = useState(() => { try { return JSON.parse(localStorage.getItem('voltio-branch')); } catch { return null; } });
   const [page, setPageState] = useState(() => location.hash.slice(1) || 'inventory');
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -59,28 +61,31 @@ function App() {
   const inputRef = useRef();
 
   useEffect(() => {
-    if (!user) { setLoading(false); return; }
+    if (!user || !selectedBranch || !['inventory', 'create-order'].includes(page)) { setLoading(false); return; }
     laptopApi.list()
       .then(setItems)
       .catch(requestError => setError(requestError.message))
       .finally(() => setLoading(false));
-  }, [user, page]);
+  }, [user, page, selectedBranch?.id]);
   useEffect(() => {
     if (!user || (page !== 'customers' && page !== 'create-order')) return;
     setCustomersLoading(true); setCustomersError('');
     customerApi.list().then(setCustomers).catch(e => setCustomersError(e.message)).finally(() => setCustomersLoading(false));
-  }, [user, page]);
+  }, [user, page, selectedBranch?.id]);
   useEffect(() => {
-    if (!user || user.role !== 'admin' || page !== 'orders') return;
+    if (!user || !['admin', 'super_admin'].includes(user.role) || page !== 'orders' || !selectedBranch) return;
     setOrdersLoading(true); setOrdersError('');
     orderApi.list().then(setOrders).catch(e => setOrdersError(e.message)).finally(() => setOrdersLoading(false));
-  }, [user, page]);
+  }, [user, page, selectedBranch?.id]);
   const setPage = next => { setPageState(next); location.hash = next; };
   const onAuth = result => {
     localStorage.setItem('voltio-token', result.token); localStorage.setItem('voltio-user', JSON.stringify(result.user)); setUser(result.user);
-    setPage(result.user.role === 'admin' ? 'inventory' : 'create-order');
+    if (result.user.role === 'super_admin') { localStorage.removeItem('voltio-branch-id'); localStorage.removeItem('voltio-branch'); setSelectedBranch(null); setPage('branches'); }
+    else { localStorage.setItem('voltio-branch-id', result.user.branch.id); localStorage.setItem('voltio-branch', JSON.stringify(result.user.branch)); setSelectedBranch(result.user.branch); setPage(result.user.role === 'admin' ? 'inventory' : 'create-order'); }
   };
-  const logout = () => { localStorage.removeItem('voltio-token'); localStorage.removeItem('voltio-user'); setUser(null); setItems([]); setOrders([]); location.hash = ''; };
+  const logout = () => { localStorage.removeItem('voltio-token'); localStorage.removeItem('voltio-user'); localStorage.removeItem('voltio-branch-id'); localStorage.removeItem('voltio-branch'); setUser(null); setSelectedBranch(null); setItems([]); setOrders([]); location.hash = ''; };
+  const selectBranch = branch => { localStorage.setItem('voltio-branch-id', branch.id); localStorage.setItem('voltio-branch', JSON.stringify(branch)); setSelectedBranch(branch); setItems([]); setOrders([]); setCustomers([]); setPage('inventory'); };
+  const leaveBranch = () => { localStorage.removeItem('voltio-branch-id'); localStorage.removeItem('voltio-branch'); setSelectedBranch(null); setItems([]); setOrders([]); setCustomers([]); setPage('branches'); };
   const availableItems = useMemo(() => items.filter(item => Number(item.quantity) > 0), [items]);
   const filterOptions = useMemo(() => {
     const availableFor = key => availableItems.filter(item => matchesFilters(item, filters, key));
@@ -159,14 +164,20 @@ function App() {
   };
 
   if (!user) return <AuthPage onAuth={onAuth}/>;
-  const safePage = user.role === 'admin' ? (['inventory', 'orders', 'returns', 'customers'].includes(page) ? page : 'inventory') : 'create-order';
+  const isManager = ['admin', 'super_admin'].includes(user.role);
+  const managerInvoiceBranches = ['cairo', 'omar-abou-samra'];
+  const managerCanCreateOrder = isManager && managerInvoiceBranches.includes(selectedBranch?.code);
+  const safePage = user.role === 'super_admin' && !selectedBranch
+    ? 'branches'
+    : isManager ? ([...['inventory', 'returns', 'customers'], ...(managerCanCreateOrder ? ['create-order'] : ['orders'])].includes(page) ? page : 'inventory') : 'create-order';
   return <div className="app-shell">
-    <Sidebar page={safePage} setPage={setPage} user={user} logout={logout}/>
+    <Sidebar page={safePage} setPage={setPage} user={user} logout={logout} selectedBranch={selectedBranch} leaveBranch={leaveBranch} managerCanCreateOrder={managerCanCreateOrder}/>
     <main className="single-page">
-      <Header openAdd={openAdd} page={safePage} user={user}/>
+      <Header openAdd={openAdd} page={safePage} user={user} selectedBranch={selectedBranch}/>
+      {safePage === 'branches' && <BranchDashboard selectBranch={selectBranch}/>} 
       {safePage === 'inventory' && <Products items={filtered} inventoryItems={availableItems} allCount={availableItems.length} loading={loading} error={error} filters={filters} setFilters={setFilters} filterOptions={filterOptions} resetFilters={() => setFilters(initialFilters)} openEdit={openEdit} duplicate={duplicate} remove={remove} importFile={importFile} exportData={exportData} inputRef={inputRef}/>} 
-      {safePage === 'create-order' && <CreateOrder products={availableItems} customers={customers} customersLoading={customersLoading} customersError={customersError}/>} 
-      {safePage === 'orders' && <Orders orders={orders} setOrders={setOrders} isAdmin={user.role === 'admin'} loading={ordersLoading} error={ordersError}/>} 
+      {safePage === 'create-order' && <CreateOrder products={availableItems} customers={customers} customersLoading={customersLoading} customersError={customersError} autoConfirm={managerCanCreateOrder} onCreated={managerCanCreateOrder ? () => setPage('inventory') : undefined}/>} 
+      {safePage === 'orders' && <Orders orders={orders} setOrders={setOrders} isAdmin={isManager} loading={ordersLoading} error={ordersError}/>} 
       {safePage === 'customers' && <Customers customers={customers} setCustomers={setCustomers} loading={customersLoading} error={customersError}/>} 
       {safePage === 'returns' && <Returns/>}
     </main>
