@@ -1,4 +1,5 @@
-import { Boxes, Download, FileSpreadsheet, Laptop, Layers3, ListChecks, Pencil, Tags, Trash2, Upload } from 'lucide-react';
+import { Boxes, Copy, Download, FileSpreadsheet, Laptop, Layers3, ListChecks, Pencil, Tags, Trash2, Upload } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { money } from '../data/laptops';
 import LaptopFilters from './LaptopFilters';
 import Pagination from './Pagination';
@@ -7,7 +8,7 @@ import { useUi } from '../UiContext';
 
 export default function Products({
   items, allCount, loading, error, filters, setFilters, filterOptions, resetFilters,
-  openEdit, remove, importFile, exportData, inputRef, inventoryItems = items,
+  openEdit, duplicate, remove, importFile, exportData, inputRef, inventoryItems = items,
 }) {
   const { isArabic, language } = useUi();
   const [page, setPage] = useState(1);
@@ -25,6 +26,44 @@ export default function Products({
   const changePageSize = size => {
     setPageSize(size);
     setPage(1);
+  };
+
+  const confirmDuplicate = async item => {
+    const result = await Swal.fire({
+      title: isArabic ? 'نسخ هذا الجهاز؟' : 'Duplicate this device?',
+      text: isArabic
+        ? `سيتم إنشاء نسخة جديدة من ${item.brand} ${item.model} ووضعها أسفل الجهاز مباشرة.`
+        : `A copy of ${item.brand} ${item.model} will be created directly below it.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: isArabic ? 'نعم، اعمل نسخة' : 'Yes, duplicate',
+      cancelButtonText: isArabic ? 'إلغاء' : 'Cancel',
+      confirmButtonColor: '#d9b84f',
+      cancelButtonColor: '#3a3f48',
+      reverseButtons: isArabic,
+      showLoaderOnConfirm: true,
+      allowOutsideClick: () => !Swal.isLoading(),
+      customClass: { popup: 'duplicate-alert' },
+      preConfirm: async () => {
+        const saved = await duplicate(item);
+        if (!saved) {
+          Swal.showValidationMessage(isArabic ? 'تعذر نسخ الجهاز. حاول مرة أخرى.' : 'Could not duplicate the device. Please try again.');
+          return false;
+        }
+        return saved;
+      },
+    });
+    if (result.isConfirmed) {
+      await Swal.fire({
+        title: isArabic ? 'تم إنشاء النسخة' : 'Device duplicated',
+        text: isArabic ? 'تمت إضافة الجهاز الجديد أسفل الجهاز الأصلي.' : 'The new device was added below the original.',
+        icon: 'success',
+        confirmButtonColor: '#d9b84f',
+        timer: 1800,
+        timerProgressBar: true,
+        customClass: { popup: 'duplicate-alert' },
+      });
+    }
   };
 
   return <section className="content">
@@ -62,13 +101,13 @@ export default function Products({
           <thead><tr><th>{isArabic ? 'الجهاز' : 'Device'}</th><th>{isArabic ? 'المعالج' : 'Processor'}</th><th>{isArabic ? 'الرام' : 'RAM'}</th><th>{isArabic ? 'التخزين' : 'Storage'}</th><th>{isArabic ? 'التكلفة' : 'Cost'}</th><th>{isArabic ? 'السعر' : 'Price'}</th><th>{isArabic ? 'الكمية' : 'Quantity'}</th><th>{isArabic ? 'الإجراءات' : 'Actions'}</th></tr></thead>
           <tbody>{visibleItems.map(item => <tr key={item.id}>
             <td><div className="product"><span><Laptop size={20}/></span><div><b>{item.model}</b><small>{!isArabic && item.brand === 'غير محدد' ? 'Not specified' : item.brand}{item.listName ? ` • ${item.listName}` : ''}</small></div></div></td>
-            <td><span className="processor-cell">{item.processor}</span></td>
+            <td><div className="processor-cell"><strong>{item.processor || '—'}</strong><div className="processor-meta">{item.generation && <span>{isArabic ? `جيل ${item.generation}` : `Gen ${item.generation}`}</span>}{item.processorType && <span>{item.processorType}</span>}</div>{item.graphics && <small>{isArabic ? 'كارت شاشة' : 'Graphics'}: {item.graphics}</small>}</div></td>
             <td><span className="spec-pill">{item.ram || '—'}</span></td>
             <td><span className="spec-pill">{item.storage || '—'}</span></td>
             <td><b className="cost-cell" dir={isArabic ? 'rtl' : 'ltr'}>{money(item.cost, language)}</b></td>
             <td><b className="price-cell" dir={isArabic ? 'rtl' : 'ltr'}>{money(item.price, language)}</b></td>
             <td><span className={item.quantity <= 2 ? 'qty low' : 'qty'}>{item.quantity} {isArabic ? 'جهاز' : 'units'}</span></td>
-            <td><div className="row-actions"><button onClick={() => openEdit(item)} title={isArabic ? 'تعديل' : 'Edit'}><Pencil size={17}/></button>{item.quantity <= 0 && <button className="danger" onClick={() => remove(item.id)} title={isArabic ? 'حذف' : 'Delete'}><Trash2 size={17}/></button>}</div></td>
+            <td><div className="row-actions"><button onClick={() => openEdit(item)} title={isArabic ? 'تعديل' : 'Edit'}><Pencil size={17}/></button><button className="duplicate" onClick={() => confirmDuplicate(item)} title={isArabic ? 'عمل نسخة' : 'Duplicate'}><Copy size={17}/></button>{item.quantity <= 0 && <button className="danger" onClick={() => remove(item.id)} title={isArabic ? 'حذف' : 'Delete'}><Trash2 size={17}/></button>}</div></td>
           </tr>)}</tbody>
         </table>
         {!loading && !items.length && <div className="empty"><FileSpreadsheet size={38}/><b>{allCount ? (isArabic ? 'لا توجد نتائج مطابقة' : 'No matching results') : (isArabic ? 'ابدأ برفع ملف Excel' : 'Start by importing Excel')}</b><span>{allCount ? (isArabic ? 'غيّر الفلاتر أو امسحها لعرض البيانات' : 'Change or reset filters to view data') : (isArabic ? 'سيتم حفظ بيانات الملف في MongoDB Atlas' : 'Your data will be saved in MongoDB Atlas')}</span>{!allCount && <button className="import-button" onClick={() => inputRef.current.click()}><Upload size={17}/>{isArabic ? 'اختيار ملف Excel' : 'Choose Excel file'}</button>}</div>}

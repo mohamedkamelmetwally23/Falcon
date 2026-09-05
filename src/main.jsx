@@ -118,6 +118,24 @@ function App() {
       return true;
     } catch (requestError) { setError(requestError.message); return false; }
   };
+  const duplicate = async source => {
+    try {
+      setError('');
+      const { id, _id, createdAt, updatedAt, ...copy } = source;
+      const saved = await laptopApi.create(copy);
+      setItems(current => {
+        const sourceIndex = current.findIndex(item => item.id === source.id);
+        if (sourceIndex < 0) return [saved, ...current];
+        const next = [...current];
+        next.splice(sourceIndex + 1, 0, saved);
+        return next;
+      });
+      return saved;
+    } catch (requestError) {
+      setError(requestError.message);
+      return null;
+    }
+  };
   const importFile = async e => {
     const file = e.target.files[0]; if (!file) return;
     const wb = XLSX.read(await file.arrayBuffer());
@@ -146,7 +164,7 @@ function App() {
     <Sidebar page={safePage} setPage={setPage} user={user} logout={logout}/>
     <main className="single-page">
       <Header openAdd={openAdd} page={safePage} user={user}/>
-      {safePage === 'inventory' && <Products items={filtered} inventoryItems={availableItems} allCount={availableItems.length} loading={loading} error={error} filters={filters} setFilters={setFilters} filterOptions={filterOptions} resetFilters={() => setFilters(initialFilters)} openEdit={openEdit} remove={remove} importFile={importFile} exportData={exportData} inputRef={inputRef}/>} 
+      {safePage === 'inventory' && <Products items={filtered} inventoryItems={availableItems} allCount={availableItems.length} loading={loading} error={error} filters={filters} setFilters={setFilters} filterOptions={filterOptions} resetFilters={() => setFilters(initialFilters)} openEdit={openEdit} duplicate={duplicate} remove={remove} importFile={importFile} exportData={exportData} inputRef={inputRef}/>} 
       {safePage === 'create-order' && <CreateOrder products={availableItems} customers={customers} customersLoading={customersLoading} customersError={customersError}/>} 
       {safePage === 'orders' && <Orders orders={orders} setOrders={setOrders} isAdmin={user.role === 'admin'} loading={ordersLoading} error={ordersError}/>} 
       {safePage === 'customers' && <Customers customers={customers} setCustomers={setCustomers} loading={customersLoading} error={customersError}/>} 

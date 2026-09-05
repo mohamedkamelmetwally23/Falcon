@@ -2,6 +2,13 @@ import { AlertTriangle, Check, PackagePlus, Trash2, X } from 'lucide-react';
 import { useUi } from '../UiContext';
 import { useState } from 'react';
 
+const ramOptions = ['4 GB', '8 GB', '16 GB', '32 GB'];
+const storageOptions = ['256 M.2', '512 M.2', '500 HDD', 'بدون هارد'];
+const graphicsOptions = ['INTEL', 'VGA 2', 'VGA 4', 'VGA 6', 'VGA 8'];
+const processorOptions = ['I5', 'I7', 'I9', 'RYZEN 5', 'RYZEN 7'];
+const generationOptions = Array.from({ length: 9 }, (_, index) => String(index + 6));
+const processorTypeOptions = ['U', 'HQ', 'H', 'G7'];
+
 export default function ProductModal({ form, setForm, editing, close, submit, onDelete }) {
   const { isArabic } = useUi();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -12,24 +19,49 @@ export default function ProductModal({ form, setForm, editing, close, submit, on
     <input type={type} min={type === 'number' ? 0 : undefined} required value={form[key]} placeholder={placeholder} autoComplete="off" onChange={event => update(key, event.target.value)}/>
   </label>;
 
+  const selectField = (key, label, options, className = '') => <label className={className}>
+    <span>{label}</span>
+    <select required value={form[key] ?? ''} onChange={event => update(key, event.target.value)}>
+      <option value="" disabled>{isArabic ? 'اختر' : 'Select'}</option>
+      {options.map(option => <option key={option} value={option}>{option}</option>)}
+    </select>
+  </label>;
+
   return <div className="modal-backdrop" onMouseDown={event => event.target === event.currentTarget && close()}>
     <form className="modal" onSubmit={submit}>
       <div className="modal-head"><div className="modal-title"><span><PackagePlus/></span><div><h2>{editing ? (isArabic ? 'تعديل بيانات الجهاز' : 'Edit device') : (isArabic ? 'إضافة جهاز جديد' : 'Add new device')}</h2><p>{isArabic ? 'اكتب بيانات الجهاز كاملة في الحقول التالية' : 'Enter the complete device details below'}</p></div></div><button type="button" onClick={close}><X/></button></div>
       <div className="form-body">
-        <div className="form-section-head"><b>{isArabic ? 'مواصفات الجهاز' : 'Device specifications'}</b><span>{isArabic ? 'البيانات الأساسية والمواصفات الفنية' : 'Basic details and technical specifications'}</span></div>
-        <div className="form-grid">
-          {field('model', isArabic ? 'الموديل' : 'Model', 'text', isArabic ? 'مثال: Latitude 5420' : 'e.g. Latitude 5420')}
-          {field('brand', isArabic ? 'الماركة' : 'Brand', 'text', isArabic ? 'مثال: Dell' : 'e.g. Dell')}
-          {field('processor', isArabic ? 'المعالج' : 'Processor', 'text', isArabic ? 'مثال: Intel Core i5-1145G7' : 'e.g. Intel Core i5-1145G7', 'wide-field')}
-          {field('ram', isArabic ? 'الرام' : 'RAM', 'text', isArabic ? 'مثال: 16 GB' : 'e.g. 16 GB')}
-          {field('storage', isArabic ? 'التخزين' : 'Storage', 'text', isArabic ? 'مثال: 512 GB SSD' : 'e.g. 512 GB SSD')}
+        <div className="form-card">
+          <div className="form-section-head"><b>{isArabic ? 'بيانات الجهاز' : 'Device details'}</b><span>{isArabic ? 'الماركة والموديل' : 'Brand and model'}</span></div>
+          <div className="form-grid identity-grid">
+            {field('brand', isArabic ? 'الماركة' : 'Brand', 'text', isArabic ? 'مثال: Dell' : 'e.g. Dell')}
+            {field('model', isArabic ? 'الموديل' : 'Model', 'text', isArabic ? 'مثال: Latitude 5420' : 'e.g. Latitude 5420')}
+          </div>
         </div>
-        <div className="form-section-head stock-head"><b>{isArabic ? 'السعر والمخزون' : 'Price and stock'}</b><span>{isArabic ? 'حدد سعر الجهاز والكمية المتاحة' : 'Set the price and available quantity'}</span></div>
-        <div className="form-grid stock-grid">
-          {field('listName', isArabic ? 'اسم الليستة' : 'List name', 'text', isArabic ? 'مثال: ليستة أغسطس' : 'e.g. August list')}
-          {field('cost', isArabic ? 'التكلفة بالجنيه' : 'Cost (EGP)', 'number', isArabic ? 'مثال: 12000' : 'e.g. 12000')}
-          {field('price', isArabic ? 'السعر بالجنيه' : 'Price (EGP)', 'number', isArabic ? 'مثال: 15000' : 'e.g. 15000')}
-          {field('quantity', isArabic ? 'الكمية المتاحة' : 'Available quantity', 'number', isArabic ? 'مثال: 5' : 'e.g. 5')}
+        <div className="form-card">
+          <div className="form-section-head"><b>{isArabic ? 'مواصفات المعالج' : 'Processor details'}</b><span>{isArabic ? 'المعالج والجيل والفئة' : 'Processor, generation and type'}</span></div>
+          <div className="form-grid processor-grid">
+            {selectField('processor', isArabic ? 'المعالج' : 'Processor', processorOptions)}
+            {selectField('generation', isArabic ? 'الجيل' : 'Generation', generationOptions)}
+            {selectField('processorType', isArabic ? 'فئة البروسيسور' : 'Processor type', processorTypeOptions)}
+          </div>
+        </div>
+        <div className="form-card">
+          <div className="form-section-head"><b>{isArabic ? 'الذاكرة والتخزين' : 'Memory and storage'}</b><span>{isArabic ? 'الرام والهارد وكارت الشاشة' : 'RAM, storage and graphics'}</span></div>
+          <div className="form-grid hardware-grid">
+            {selectField('ram', isArabic ? 'الرام' : 'RAM', ramOptions)}
+            {selectField('storage', isArabic ? 'التخزين' : 'Storage', storageOptions)}
+            {selectField('graphics', isArabic ? 'كارت الشاشة' : 'Graphics card', graphicsOptions)}
+          </div>
+        </div>
+        <div className="form-card stock-card">
+          <div className="form-section-head"><b>{isArabic ? 'السعر والمخزون' : 'Price and stock'}</b><span>{isArabic ? 'بيانات التسعير والكمية المتاحة' : 'Pricing and available quantity'}</span></div>
+          <div className="form-grid stock-grid">
+            {field('listName', isArabic ? 'اسم الليستة' : 'List name', 'text', isArabic ? 'مثال: ليستة أغسطس' : 'e.g. August list')}
+            {field('cost', isArabic ? 'التكلفة بالجنيه' : 'Cost (EGP)', 'number', isArabic ? 'مثال: 12000' : 'e.g. 12000')}
+            {field('price', isArabic ? 'السعر بالجنيه' : 'Price (EGP)', 'number', isArabic ? 'مثال: 15000' : 'e.g. 15000')}
+            {field('quantity', isArabic ? 'الكمية المتاحة' : 'Available quantity', 'number', isArabic ? 'مثال: 5' : 'e.g. 5')}
+          </div>
         </div>
       </div>
       <div className="modal-actions">
