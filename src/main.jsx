@@ -12,10 +12,11 @@ import Returns from './components/Returns';
 import { emptyForm } from './data/laptops';
 import { parseLaptopSheet } from './utils/excelParser';
 import { laptopApi } from './services/laptopApi';
-import { orderApi } from './services/api';
+import { api, orderApi } from './services/api';
 import { customerApi } from './services/api';
 import Customers from './components/Customers';
-import BranchDashboard from './components/BranchDashboard';
+import Leads from './components/Leads';
+import Storefront from './components/Storefront';
 import { UiProvider } from './UiContext';
 import './styles.css';
 
@@ -43,7 +44,7 @@ function matchesFilters(item, filters, excludedFilter = '') {
 
 function App() {
   const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem('voltio-user')); } catch { return null; } });
-  const [selectedBranch, setSelectedBranch] = useState(() => { try { return JSON.parse(localStorage.getItem('voltio-branch')); } catch { return null; } });
+  const [authOpen, setAuthOpen] = useState(false);
   const [page, setPageState] = useState(() => location.hash.slice(1) || 'inventory');
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -51,6 +52,9 @@ function App() {
   const [customers, setCustomers] = useState([]);
   const [customersLoading, setCustomersLoading] = useState(false);
   const [customersError, setCustomersError] = useState('');
+  const [leads, setLeads] = useState([]);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+  const [leadsError, setLeadsError] = useState('');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,31 +65,33 @@ function App() {
   const inputRef = useRef();
 
   useEffect(() => {
-    if (!user || !selectedBranch || !['inventory', 'create-order'].includes(page)) { setLoading(false); return; }
+    if (!user || !['inventory', 'create-order'].includes(page)) { setLoading(false); return; }
     laptopApi.list()
       .then(setItems)
       .catch(requestError => setError(requestError.message))
       .finally(() => setLoading(false));
-  }, [user, page, selectedBranch?.id]);
+  }, [user, page]);
+  useEffect(() => {
+    if (!user || !['admin', 'super_admin'].includes(user.role) || page !== 'leads') return;
+    setLeadsLoading(true); setLeadsError('');
+    api('/auth/leads').then(setLeads).catch(error => setLeadsError(error.message)).finally(() => setLeadsLoading(false));
+  }, [user, page]);
   useEffect(() => {
     if (!user || (page !== 'customers' && page !== 'create-order')) return;
     setCustomersLoading(true); setCustomersError('');
     customerApi.list().then(setCustomers).catch(e => setCustomersError(e.message)).finally(() => setCustomersLoading(false));
-  }, [user, page, selectedBranch?.id]);
+  }, [user, page]);
   useEffect(() => {
-    if (!user || !['admin', 'super_admin'].includes(user.role) || page !== 'orders' || !selectedBranch) return;
+    if (!user || !['admin', 'super_admin'].includes(user.role) || page !== 'orders') return;
     setOrdersLoading(true); setOrdersError('');
     orderApi.list().then(setOrders).catch(e => setOrdersError(e.message)).finally(() => setOrdersLoading(false));
-  }, [user, page, selectedBranch?.id]);
+  }, [user, page]);
   const setPage = next => { setPageState(next); location.hash = next; };
   const onAuth = result => {
     localStorage.setItem('voltio-token', result.token); localStorage.setItem('voltio-user', JSON.stringify(result.user)); setUser(result.user);
-    if (result.user.role === 'super_admin') { localStorage.removeItem('voltio-branch-id'); localStorage.removeItem('voltio-branch'); setSelectedBranch(null); setPage('branches'); }
-    else { localStorage.setItem('voltio-branch-id', result.user.branch.id); localStorage.setItem('voltio-branch', JSON.stringify(result.user.branch)); setSelectedBranch(result.user.branch); setPage(result.user.role === 'admin' ? 'inventory' : 'create-order'); }
+    setPage(result.user.role === 'admin' || result.user.role === 'super_admin' ? 'inventory' : 'create-order');
   };
-  const logout = () => { localStorage.removeItem('voltio-token'); localStorage.removeItem('voltio-user'); localStorage.removeItem('voltio-branch-id'); localStorage.removeItem('voltio-branch'); setUser(null); setSelectedBranch(null); setItems([]); setOrders([]); location.hash = ''; };
-  const selectBranch = branch => { localStorage.setItem('voltio-branch-id', branch.id); localStorage.setItem('voltio-branch', JSON.stringify(branch)); setSelectedBranch(branch); setItems([]); setOrders([]); setCustomers([]); setPage('inventory'); };
-  const leaveBranch = () => { localStorage.removeItem('voltio-branch-id'); localStorage.removeItem('voltio-branch'); setSelectedBranch(null); setItems([]); setOrders([]); setCustomers([]); setPage('branches'); };
+  const logout = () => { localStorage.removeItem('voltio-token'); localStorage.removeItem('voltio-user'); setUser(null); setItems([]); setOrders([]); location.hash = ''; };
   const availableItems = useMemo(() => items.filter(item => Number(item.quantity) > 0), [items]);
   const filterOptions = useMemo(() => {
     const availableFor = key => availableItems.filter(item => matchesFilters(item, filters, key));
@@ -163,22 +169,20 @@ function App() {
     XLSX.writeFile(book, 'laptops-stock.xlsx');
   };
 
+  if (!user && !authOpen) return <Storefront openLogin={() => setAuthOpen(true)}/>;
   if (!user) return <AuthPage onAuth={onAuth}/>;
   const isManager = ['admin', 'super_admin'].includes(user.role);
-  const managerInvoiceBranches = ['cairo', 'omar-abou-samra'];
-  const managerCanCreateOrder = isManager && managerInvoiceBranches.includes(selectedBranch?.code);
-  const safePage = user.role === 'super_admin' && !selectedBranch
-    ? 'branches'
-    : isManager ? ([...['inventory', 'returns', 'customers'], ...(managerCanCreateOrder ? ['create-order'] : ['orders'])].includes(page) ? page : 'inventory') : 'create-order';
+  const managerCanCreateOrder = isManager;
+  const safePage = isManager ? ([...['inventory', 'returns', 'customers', 'leads', 'create-order', 'orders']].includes(page) ? page : 'inventory') : 'create-order';
   return <div className="app-shell">
-    <Sidebar page={safePage} setPage={setPage} user={user} logout={logout} selectedBranch={selectedBranch} leaveBranch={leaveBranch} managerCanCreateOrder={managerCanCreateOrder}/>
+    <Sidebar page={safePage} setPage={setPage} user={user} logout={logout} managerCanCreateOrder={managerCanCreateOrder}/>
     <main className="single-page">
-      <Header openAdd={openAdd} page={safePage} user={user} selectedBranch={selectedBranch}/>
-      {safePage === 'branches' && <BranchDashboard selectBranch={selectBranch}/>} 
+      <Header openAdd={openAdd} page={safePage} user={user}/>
       {safePage === 'inventory' && <Products items={filtered} inventoryItems={availableItems} allCount={availableItems.length} loading={loading} error={error} filters={filters} setFilters={setFilters} filterOptions={filterOptions} resetFilters={() => setFilters(initialFilters)} openEdit={openEdit} duplicate={duplicate} remove={remove} importFile={importFile} exportData={exportData} inputRef={inputRef}/>} 
       {safePage === 'create-order' && <CreateOrder products={availableItems} customers={customers} customersLoading={customersLoading} customersError={customersError} autoConfirm={managerCanCreateOrder} onCreated={managerCanCreateOrder ? () => setPage('inventory') : undefined}/>} 
       {safePage === 'orders' && <Orders orders={orders} setOrders={setOrders} isAdmin={isManager} loading={ordersLoading} error={ordersError}/>} 
       {safePage === 'customers' && <Customers customers={customers} setCustomers={setCustomers} loading={customersLoading} error={customersError}/>} 
+      {safePage === 'leads' && <Leads leads={leads} setLeads={setLeads} loading={leadsLoading} error={leadsError}/>} 
       {safePage === 'returns' && <Returns/>}
     </main>
     {modal && <ProductModal

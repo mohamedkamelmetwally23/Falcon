@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, PackagePlus, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, ImagePlus, PackagePlus, Trash2, X } from 'lucide-react';
 import { useUi } from '../UiContext';
 import { useState } from 'react';
 
@@ -13,6 +13,13 @@ export default function ProductModal({ form, setForm, editing, close, submit, on
   const { isArabic } = useUi();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const update = (key, value) => setForm(current => ({ ...current, [key]: value }));
+  const uploadImage = event => {
+    const file = event.target.files[0];
+    if (!file || file.size > 3 * 1024 * 1024) return;
+    const reader = new FileReader();
+    reader.onload = () => update('image', reader.result);
+    reader.readAsDataURL(file);
+  };
 
   const field = (key, label, type = 'text', placeholder = '', className = '') => <label className={className}>
     <span>{label}</span>
@@ -37,6 +44,7 @@ export default function ProductModal({ form, setForm, editing, close, submit, on
             {field('brand', isArabic ? 'الماركة' : 'Brand', 'text', isArabic ? 'مثال: Dell' : 'e.g. Dell')}
             {field('model', isArabic ? 'الموديل' : 'Model', 'text', isArabic ? 'مثال: Latitude 5420' : 'e.g. Latitude 5420')}
           </div>
+          <label className="image-upload-field"><span>{isArabic ? 'صورة الجهاز' : 'Device image'}</span><input type="file" accept="image/*" onChange={uploadImage}/>{form.image ? <img src={form.image} alt="معاينة الجهاز"/> : <span className="image-upload-placeholder"><ImagePlus size={20}/>{isArabic ? 'اختر صورة للجهاز' : 'Choose a device image'}</span>}</label>
         </div>
         <div className="form-card">
           <div className="form-section-head"><b>{isArabic ? 'مواصفات المعالج' : 'Processor details'}</b><span>{isArabic ? 'المعالج والجيل والفئة' : 'Processor, generation and type'}</span></div>
@@ -59,6 +67,7 @@ export default function ProductModal({ form, setForm, editing, close, submit, on
           <div className="form-grid stock-grid">
             {field('listName', isArabic ? 'اسم الليستة' : 'List name', 'text', isArabic ? 'مثال: ليستة أغسطس' : 'e.g. August list')}
             {field('cost', isArabic ? 'التكلفة بالجنيه' : 'Cost (EGP)', 'number', isArabic ? 'مثال: 12000' : 'e.g. 12000')}
+            {field('oldPrice', isArabic ? 'السعر قبل الخصم' : 'Price before discount', 'number', isArabic ? 'مثال: 18000' : 'e.g. 18000')}
             {field('price', isArabic ? 'السعر بالجنيه' : 'Price (EGP)', 'number', isArabic ? 'مثال: 15000' : 'e.g. 15000')}
             {field('quantity', isArabic ? 'الكمية المتاحة' : 'Available quantity', 'number', isArabic ? 'مثال: 5' : 'e.g. 5')}
           </div>

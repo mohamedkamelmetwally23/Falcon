@@ -4,8 +4,6 @@ export async function api(path, options = {}) {
   const token = localStorage.getItem("voltio-token");
   const headers = { ...options.headers };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const branchId = localStorage.getItem("voltio-branch-id");
-  if (branchId) headers["X-Branch-Id"] = branchId;
   if (options.body) headers["Content-Type"] = "application/json";
   const response = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   const data =
@@ -19,13 +17,6 @@ export const authApi = {
     api("/auth/login", { method: "POST", body: JSON.stringify(data) }),
   register: (data) =>
     api("/auth/register", { method: "POST", body: JSON.stringify(data) }),
-  branches: () => api("/auth/branches"),
-};
-export const branchApi = {
-  list: () => api("/branches"),
-  users: () => api("/branches/users"),
-  createUser: data => api("/branches/users", { method: "POST", body: JSON.stringify(data) }),
-  updateUser: (id, data) => api(`/branches/users/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 };
 export const orderApi = {
   list: () => api("/orders"),

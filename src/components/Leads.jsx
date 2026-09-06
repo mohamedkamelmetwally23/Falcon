@@ -1,0 +1,7 @@
+import { Phone, UserRound } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { api } from '../services/api';
+
+export default function Leads({ leads, setLeads, loading, error }) {
+  return <section className="content"><div className="workspace leads-page"><div className="workspace-toolbar"><div><span className="eyebrow">VOLTIO COMMUNITY</span><h2>المهتمين الجدد</h2><p>الأشخاص الذين أنشأوا حسابًا من صفحة المنتجات.</p></div><strong className="product-count">{leads.length} <small>مسجل</small></strong></div>{error && <div className="status-message error">{error}</div>}{loading ? <div className="status-message loading">جاري تحميل البيانات...</div> : <div className="leads-list">{leads.map(lead => <div className="lead-row" key={lead._id || lead.id}><span className="lead-avatar"><UserRound size={18}/></span><div><b>{lead.name}</b><small>{new Date(lead.createdAt).toLocaleDateString('ar-EG')}</small></div><a href={`tel:${lead.phone}`}><Phone size={16}/>{lead.phone || 'لا يوجد رقم'}</a></div>)}{!leads.length && <div className="empty"><UserRound size={35}/><b>لا يوجد مسجلون حتى الآن</b><span>سيظهر هنا كل شخص ينشئ حسابًا من صفحة المنتجات.</span></div>}</div>}</div></section>;
+}
