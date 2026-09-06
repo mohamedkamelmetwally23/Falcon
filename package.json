@@ -16,5 +16,10 @@
     "sweetalert2": "^11.26.25",
     "vite": "latest",
     "xlsx": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "latest",
+    "daisyui": "latest",
+    "tailwindcss": "latest"
   }
 }

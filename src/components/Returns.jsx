@@ -18,6 +18,92 @@ export default function Returns() {
   const availableToReturn = selectedItem ? selectedItem.quantity - returnedQuantity : 0;
   const submit = async event => { event.preventDefault(); setSaving(true); setError(''); setMessage(''); try { const saved = await returnApi.create({ orderId: selectedOrder.id, orderItemId: selectedItem._id, quantity: Number(quantity), reason }); setReturns(current => [saved, ...current]); setOrderLabel(''); setItemLabel(''); setQuantity(1); setReason(''); setMessage('تم تسجيل المرتجع وإضافة الكمية للمخزون'); } catch (requestError) { setError(requestError.message); } finally { setSaving(false); } };
 
-  return <section className="content returns-page"><div className="invoice-page-head"><div className="invoice-head-icon"><RotateCcw/></div><div><span className="invoice-eyebrow">VOLTIO RETURNS</span><h2>تسجيل مرتجع</h2><p>أرجع جهازًا من فاتورة مؤكدة إلى المخزون.</p></div></div><div className="returns-layout"><form className="invoice-card return-form" onSubmit={submit}><div className="return-fields"><DropdownFilter label="الفاتورة" value={orderLabel} options={orderOptions} placeholder="اختر الفاتورة" onChange={value => { setOrderLabel(value); setItemLabel(''); }}/><DropdownFilter label="البند" value={itemLabel} options={itemOptions} placeholder="اختر الجهاز" disabled={!selectedOrder} onChange={setItemLabel}/><label><span>الكمية المرتجعة</span><input required type="number" min="1" max={availableToReturn || 1} value={quantity} onChange={event => setQuantity(event.target.value)}/>{selectedItem && <small>المتاح للإرجاع: {availableToReturn}</small>}</label><label><span>ملحوظة</span><textarea maxLength="500" value={reason} onChange={event => setReason(event.target.value)} placeholder="سبب أو ملحوظة المرتجع (اختياري)"/></label></div>{error && <div className="status-message error">{error}</div>}{message && <div className="order-success"><CheckCircle2/>{message}</div>}<button className="primary return-submit" disabled={!selectedItem || availableToReturn < 1 || saving}>{saving ? 'جاري الحفظ...' : 'تأكيد المرتجع'}</button></form>
-    <div className="return-history"><div className="return-history-head"><div><span>RETURN LOG</span><h3>سجل المرتجعات</h3></div><b>{returns.length}</b></div>{returns.map(entry => <article key={entry.id}><span><RotateCcw/></span><div><b>{entry.product}</b><small>فاتورة #{entry.order?.id?.slice(-6).toUpperCase()} • {entry.order?.customerName}</small>{entry.reason && <p>{entry.reason}</p>}</div><strong>+{entry.quantity}</strong><time>{new Date(entry.createdAt).toLocaleDateString('ar-EG')}</time></article>)}{!returns.length && <div className="returns-empty">لا توجد مرتجعات حتى الآن</div>}</div></div></section>;
+  return (
+    <section className="content p-4 md:p-6">
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <RotateCcw />
+        </div>
+        <div>
+          <span className="text-xs font-semibold tracking-wider text-primary">FALCON RETURNS</span>
+          <h2 className="text-xl font-bold">تسجيل مرتجع</h2>
+          <p className="text-sm text-base-content/60">أرجع جهازًا من فاتورة مؤكدة إلى المخزون.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <form className="card bg-base-100 shadow-sm" onSubmit={submit}>
+          <div className="card-body gap-4">
+            <label className="form-control">
+              <span className="label-text mb-1">الفاتورة</span>
+              <DropdownFilter label="الفاتورة" value={orderLabel} options={orderOptions} placeholder="اختر الفاتورة" onChange={value => { setOrderLabel(value); setItemLabel(''); }} />
+            </label>
+            <label className="form-control">
+              <span className="label-text mb-1">البند</span>
+              <DropdownFilter label="البند" value={itemLabel} options={itemOptions} placeholder="اختر الجهاز" disabled={!selectedOrder} onChange={setItemLabel} />
+            </label>
+            <label className="form-control">
+              <span className="label-text mb-1">الكمية المرتجعة</span>
+              <input required type="number" min="1" max={availableToReturn || 1} value={quantity} onChange={event => setQuantity(event.target.value)} className="input w-full" />
+              {selectedItem && <small className="mt-1 text-base-content/60">المتاح للإرجاع: {availableToReturn}</small>}
+            </label>
+            <label className="form-control">
+              <span className="label-text mb-1">ملحوظة</span>
+              <textarea maxLength="500" value={reason} onChange={event => setReason(event.target.value)} placeholder="سبب أو ملحوظة المرتجع (اختياري)" className="textarea w-full" />
+            </label>
+
+            {error && <div className="alert alert-error">{error}</div>}
+            {message && (
+              <div className="alert alert-success">
+                <CheckCircle2 size={18} />
+                {message}
+              </div>
+            )}
+
+            <button className="btn btn-primary" disabled={!selectedItem || availableToReturn < 1 || saving}>
+              {saving && <span className="loading loading-spinner loading-sm" />}
+              {saving ? 'جاري الحفظ...' : 'تأكيد المرتجع'}
+            </button>
+          </div>
+        </form>
+
+        <div className="card bg-base-100 shadow-sm">
+          <div className="card-body">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-semibold tracking-wider text-primary">RETURN LOG</span>
+                <h3 className="card-title mt-1">سجل المرتجعات</h3>
+              </div>
+              <b className="badge badge-primary badge-lg">{returns.length}</b>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2">
+              {returns.map(entry => (
+                <article className="card bg-base-200" key={entry.id}>
+                  <div className="card-body flex-row items-center gap-3 p-4">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <RotateCcw size={18} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <b className="block truncate">{entry.product}</b>
+                      <small className="text-base-content/60">
+                        فاتورة #{entry.order?.id?.slice(-6).toUpperCase()} • {entry.order?.customerName}
+                      </small>
+                      {entry.reason && <p className="mt-1 text-sm text-base-content/70">{entry.reason}</p>}
+                    </div>
+                    <strong className="badge badge-success">+{entry.quantity}</strong>
+                    <time className="text-xs text-base-content/60">{new Date(entry.createdAt).toLocaleDateString('ar-EG')}</time>
+                  </div>
+                </article>
+              ))}
+
+              {!returns.length && (
+                <div className="py-8 text-center text-sm text-base-content/60">لا توجد مرتجعات حتى الآن</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }

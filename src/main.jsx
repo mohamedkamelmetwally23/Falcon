@@ -60,12 +60,13 @@ function App() {
   const [error, setError] = useState('');
   const [filters, setFilters] = useState(initialFilters);
   const [modal, setModal] = useState(false);
+  const [savingProduct, setSavingProduct] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const inputRef = useRef();
 
   useEffect(() => {
-    if (!user || !['inventory', 'create-order'].includes(page)) { setLoading(false); return; }
+    if (!user || !['inventory'].includes(page)) { setLoading(false); return; }
     laptopApi.list()
       .then(setItems)
       .catch(requestError => setError(requestError.message))
@@ -89,7 +90,7 @@ function App() {
   const setPage = next => { setPageState(next); location.hash = next; };
   const onAuth = result => {
     localStorage.setItem('voltio-token', result.token); localStorage.setItem('voltio-user', JSON.stringify(result.user)); setUser(result.user);
-    setPage(result.user.role === 'admin' || result.user.role === 'super_admin' ? 'inventory' : 'create-order');
+    setPage(result.user.role === 'admin' || result.user.role === 'super_admin' ? 'inventory' : 'storefront');
   };
   const logout = () => { localStorage.removeItem('voltio-token'); localStorage.removeItem('voltio-user'); setUser(null); setItems([]); setOrders([]); location.hash = ''; };
   const availableItems = useMemo(() => items.filter(item => Number(item.quantity) > 0), [items]);
@@ -113,13 +114,16 @@ function App() {
   const openEdit = item => { setEditing(item.id); setForm(item); setModal(true); };
   const submit = async e => {
     e.preventDefault();
+    if (savingProduct) return;
     const clean = { ...form, cost: Number(form.cost), price: Number(form.price), quantity: Number(form.quantity) };
     try {
+      setSavingProduct(true);
       setError('');
       const saved = editing ? await laptopApi.update(editing, clean) : await laptopApi.create(clean);
       setItems(current => editing ? current.map(item => item.id === editing ? saved : item) : [saved, ...current]);
       setModal(false);
     } catch (requestError) { setError(requestError.message); }
+    finally { setSavingProduct(false); }
   };
   const remove = async id => {
     try {
@@ -169,14 +173,15 @@ function App() {
     XLSX.writeFile(book, 'laptops-stock.xlsx');
   };
 
-  if (!user && !authOpen) return <Storefront openLogin={() => setAuthOpen(true)}/>;
-  if (!user) return <AuthPage onAuth={onAuth}/>;
+  if (!user && !authOpen) return <Storefront openLogin={() => setAuthOpen(true)} />;
+  if (!user) return <AuthPage onAuth={onAuth} onBack={() => setAuthOpen(false)}/>;
   const isManager = ['admin', 'super_admin'].includes(user.role);
+  if (!isManager) return <Storefront authenticated user={user} onLogout={logout}/>;
   const managerCanCreateOrder = isManager;
-  const safePage = isManager ? ([...['inventory', 'returns', 'customers', 'leads', 'create-order', 'orders']].includes(page) ? page : 'inventory') : 'create-order';
-  return <div className="app-shell">
+  const safePage = isManager ? ([...['inventory', 'returns', 'customers', 'leads', 'create-order', 'orders']].includes(page) ? page : 'inventory') : 'storefront';
+  return <div className="min-h-screen bg-base-100">
     <Sidebar page={safePage} setPage={setPage} user={user} logout={logout} managerCanCreateOrder={managerCanCreateOrder}/>
-    <main className="single-page">
+    <main className="min-h-screen pb-16 md:pb-0 md:ms-20 lg:ms-64">
       <Header openAdd={openAdd} page={safePage} user={user}/>
       {safePage === 'inventory' && <Products items={filtered} inventoryItems={availableItems} allCount={availableItems.length} loading={loading} error={error} filters={filters} setFilters={setFilters} filterOptions={filterOptions} resetFilters={() => setFilters(initialFilters)} openEdit={openEdit} duplicate={duplicate} remove={remove} importFile={importFile} exportData={exportData} inputRef={inputRef}/>} 
       {safePage === 'create-order' && <CreateOrder products={availableItems} customers={customers} customersLoading={customersLoading} customersError={customersError} autoConfirm={managerCanCreateOrder} onCreated={managerCanCreateOrder ? () => setPage('inventory') : undefined}/>} 
@@ -192,6 +197,7 @@ function App() {
       items={items}
       close={() => setModal(false)}
       submit={submit}
+      saving={savingProduct}
       onDelete={async () => { if (await remove(editing)) setModal(false); }}
     />}
   </div>;

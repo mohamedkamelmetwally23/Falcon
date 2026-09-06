@@ -19,15 +19,20 @@ export default function Pagination({ page, pageSize, totalItems, onPageChange, o
   const start = totalItems ? (page - 1) * pageSize + 1 : 0;
   const end = Math.min(page * pageSize, totalItems);
 
-  return <div className="pagination">
-    <div className="pagination-summary">{isArabic ? 'عرض' : 'Showing'} <b>{start}–{end}</b> {isArabic ? 'من' : 'of'} <b>{totalItems}</b> {isArabic ? 'جهاز' : 'devices'}</div>
-    <div className="pagination-controls">
-      <button className="page-arrow" disabled={page === 1} onClick={() => onPageChange(page - 1)} title={isArabic ? 'السابق' : 'Previous'}>{isArabic ? <ChevronRight size={17}/> : <ChevronLeft size={17}/>}</button>
+  return <div className="flex flex-col gap-3 border-t border-base-300 pt-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="text-sm text-base-content/60">{isArabic ? 'عرض' : 'Showing'} <b className="text-base-content">{start}–{end}</b> {isArabic ? 'من' : 'of'} <b className="text-base-content">{totalItems}</b> {isArabic ? 'جهاز' : 'devices'}</div>
+    <div className="join">
+      <button className="join-item btn btn-sm" disabled={page === 1} onClick={() => onPageChange(page - 1)} title={isArabic ? 'السابق' : 'Previous'}>{isArabic ? <ChevronRight size={17}/> : <ChevronLeft size={17}/>}</button>
       {pageNumbers(page, totalPages).map(item => typeof item === 'string'
-        ? <span className="page-gap" key={item}>•••</span>
-        : <button className={page === item ? 'page-number active' : 'page-number'} onClick={() => onPageChange(item)} key={item}>{item}</button>)}
-      <button className="page-arrow" disabled={page === totalPages} onClick={() => onPageChange(page + 1)} title={isArabic ? 'التالي' : 'Next'}>{isArabic ? <ChevronLeft size={17}/> : <ChevronRight size={17}/>}</button>
+        ? <button key={item} type="button" className="join-item btn btn-sm btn-disabled">•••</button>
+        : <button key={item} className={`join-item btn btn-sm ${page === item ? 'btn-active btn-primary' : ''}`} onClick={() => onPageChange(item)}>{item}</button>)}
+      <button className="join-item btn btn-sm" disabled={page === totalPages} onClick={() => onPageChange(page + 1)} title={isArabic ? 'التالي' : 'Next'}>{isArabic ? <ChevronLeft size={17}/> : <ChevronRight size={17}/>}</button>
     </div>
-    <label className="page-size">{isArabic ? 'صفوف الصفحة' : 'Rows per page'}<select value={pageSize} onChange={event => onPageSizeChange(Number(event.target.value))}><option value="10">10</option><option value="20">20</option><option value="50">50</option></select></label>
+    <label className="flex items-center gap-2 text-sm text-base-content/60">
+      {isArabic ? 'صفوف الصفحة' : 'Rows per page'}
+      <select className="select select-sm" value={pageSize} onChange={event => onPageSizeChange(Number(event.target.value))}>
+        <option value="10">10</option><option value="20">20</option><option value="50">50</option>
+      </select>
+    </label>
   </div>;
 }
