@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes: false;
+}
 
 /* FALCON identity — dark: near-black base lifted from the logo, with the
    red/orange -> pink/purple neon accent from the hero keyboard shot. */
