@@ -308,7 +308,7 @@ export default function Storefront({ openLogin = () => {}, authenticated = false
                         <strong className="text-xl font-extrabold text-primary">{money(product.price)}</strong>
                       </div>
                     </div>
-                    <button type="button" onClick={() => authenticated ? setSelectedProduct(product) : openLogin()} className="btn btn-primary btn-sm gap-2 rounded-full px-4">
+                    <button type="button" onClick={() => setSelectedProduct(product)} className="btn btn-primary btn-sm gap-2 rounded-full px-4">
                       التفاصيل <ArrowLeft size={16} />
                     </button>
                   </div>
