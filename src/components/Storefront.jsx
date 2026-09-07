@@ -401,18 +401,20 @@ export default function Storefront({ openLogin = () => {}, authenticated = false
             <div><span className="text-xs font-bold tracking-widest text-primary">FALCON LAPTOP</span><h2 className="mt-1 text-2xl font-extrabold">{selectedProduct.brand} {selectedProduct.model}</h2></div>
             <button type="button" className="btn btn-circle btn-ghost btn-sm" onClick={() => setSelectedProduct(null)} aria-label={isArabic ? 'إغلاق' : 'Close'}><X size={19}/></button>
           </div>
-          <div className="grid gap-6 overflow-y-auto p-5 md:grid-cols-[.9fr_1.1fr]">
-            <div className="relative aspect-3/2 overflow-hidden rounded-box bg-base-300">
-              {(selectedProduct.imageUrl || selectedProduct.image) && !brokenImages.has(selectedProduct.id || selectedProduct._id) ? (
-                <ProductImage
-                  src={productImageSrc(selectedProduct)}
-                  alt={selectedProduct.model}
-                  className="h-full w-full object-contain"
-                  onError={() => markImageBroken(selectedProduct.id || selectedProduct._id)}
-                />
-              ) : (
-                <div className="flex aspect-3/2 items-center justify-center"><Laptop size={90} className="text-base-content/30"/></div>
-              )}
+          <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto p-5 md:grid-cols-[.9fr_1.1fr]">
+            <div className="relative self-start overflow-hidden rounded-box bg-base-300" style={{ paddingTop: '66.6667%' }}>
+              <div className="absolute inset-0">
+                {(selectedProduct.imageUrl || selectedProduct.image) && !brokenImages.has(selectedProduct.id || selectedProduct._id) ? (
+                  <ProductImage
+                    src={productImageSrc(selectedProduct)}
+                    alt={selectedProduct.model}
+                    className="h-full w-full object-contain"
+                    onError={() => markImageBroken(selectedProduct.id || selectedProduct._id)}
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center"><Laptop size={90} className="text-base-content/30"/></div>
+                )}
+              </div>
             </div>
             <div className="flex flex-col gap-6">
               <p className="text-base leading-8 text-base-content/70">{describeSpecs(selectedProduct, isArabic)}</p>
