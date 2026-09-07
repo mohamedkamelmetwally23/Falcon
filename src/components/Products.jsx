@@ -110,10 +110,10 @@ export default function Products({
             <h2 className="text-xl font-bold text-base-content">{isArabic ? 'قائمة الأجهزة' : 'Device list'}</h2>
             <p className="text-sm text-base-content/60">{allCount} {isArabic ? 'جهاز مسجل' : 'registered'} • {items.length} {isArabic ? 'نتيجة ظاهرة' : 'results'}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <input ref={inputRef} type="file" accept=".xlsx,.xls,.csv" hidden onChange={importFile}/>
-            <button className="btn btn-primary" onClick={() => inputRef.current.click()}><Upload size={18}/>{isArabic ? 'رفع ملف Excel' : 'Import Excel'}</button>
-            <button className="btn btn-outline" onClick={exportData} disabled={!allCount}><Download size={17}/>{isArabic ? 'تصدير البيانات' : 'Export data'}</button>
+            <button className="btn btn-primary w-full sm:w-auto" onClick={() => inputRef.current.click()}><Upload size={18}/>{isArabic ? 'رفع ملف Excel' : 'Import Excel'}</button>
+            <button className="btn btn-outline w-full sm:w-auto" onClick={exportData} disabled={!allCount}><Download size={17}/>{isArabic ? 'تصدير البيانات' : 'Export data'}</button>
           </div>
         </div>
 

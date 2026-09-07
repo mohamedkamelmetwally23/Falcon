@@ -25,7 +25,7 @@ export default function Leads({ leads, setLeads, loading, error }) {
           ) : (
             <div className="mt-4 flex flex-col divide-y divide-base-200">
               {leads.map(lead => (
-                <div className="flex items-center gap-3 py-3" key={lead._id || lead.id}>
+                <div className="flex flex-wrap items-center gap-3 py-3" key={lead._id || lead.id}>
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                     <UserRound size={18} />
                   </span>
@@ -33,7 +33,7 @@ export default function Leads({ leads, setLeads, loading, error }) {
                     <b className="block truncate">{lead.name}</b>
                     <small className="text-base-content/60">{new Date(lead.createdAt).toLocaleDateString('ar-EG')}</small>
                   </div>
-                  <a href={`tel:${lead.phone}`} className="btn btn-ghost btn-sm gap-2">
+                  <a href={`tel:${lead.phone}`} className="btn btn-ghost btn-sm max-w-full gap-2 sm:shrink-0">
                     <Phone size={16} />
                     {lead.phone || 'لا يوجد رقم'}
                   </a>

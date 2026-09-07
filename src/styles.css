@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
+
 @plugin "daisyui" {
   themes: false;
 }
@@ -99,5 +100,23 @@
   body {
     font-family: 'Alexandria', sans-serif;
     font-synthesis: none;
+  }
+
+  @media (max-width: 639px) {
+    body {
+      overflow-x: hidden;
+    }
+
+    .btn {
+      min-height: 2.75rem;
+    }
+
+    .card-body {
+      padding: 1rem;
+    }
+
+    .table {
+      white-space: nowrap;
+    }
   }
 }

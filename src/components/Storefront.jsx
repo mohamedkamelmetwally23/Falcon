@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { money } from '../data/laptops';
 import heroImage from '../assets/hero.png';
 import { useUi } from '../UiContext';
+import { useTrimmedImage } from '../utils/trimImageBorders';
 
 const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/catalog/laptops`;
 const API_ROOT = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -39,6 +40,23 @@ function HeroChip({ icon, label }) {
         <span className="h-1.5 w-12 rounded-full bg-base-content/10" />
       </div>
     </div>
+  );
+}
+
+function ProductImage({ src, alt, className, fillClassName, onError }) {
+  const trimmedSrc = useTrimmedImage(src);
+  const shownSrc = trimmedSrc || src;
+  const fitClassName = trimmedSrc ? fillClassName : className;
+  return (
+    <>
+      <img
+        src={shownSrc}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full scale-125 object-cover object-center opacity-40 blur-lg"
+      />
+      <img src={shownSrc} alt={alt} className={fitClassName} onError={onError} />
+    </>
   );
 }
 
@@ -262,10 +280,11 @@ export default function Storefront({ openLogin = () => {}, authenticated = false
                 <figure className="relative aspect-video overflow-hidden bg-base-300">
                   <span className="badge badge-primary absolute top-3 inset-s-3 z-10">متاح: {product.quantity}</span>
                   {(product.imageUrl || product.image) && !brokenImages.has(product.id || product._id) ? (
-                    <img
+                    <ProductImage
                       src={productImageSrc(product)}
                       alt={product.model}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      className="relative h-full w-full object-contain p-3 transition duration-500 group-hover:scale-105"
+                      fillClassName="relative h-full w-full object-cover transition duration-500 group-hover:scale-105"
                       onError={() => markImageBroken(product.id || product._id)}
                     />
                   ) : (
@@ -316,12 +335,13 @@ export default function Storefront({ openLogin = () => {}, authenticated = false
             <button type="button" className="btn btn-circle btn-ghost btn-sm" onClick={() => setSelectedProduct(null)} aria-label="إغلاق"><X size={19}/></button>
           </div>
           <div className="grid gap-6 p-5 md:grid-cols-[.9fr_1.1fr]">
-            <div className="overflow-hidden rounded-box bg-base-300">
+            <div className="relative aspect-square overflow-hidden rounded-box bg-base-300">
               {(selectedProduct.imageUrl || selectedProduct.image) && !brokenImages.has(selectedProduct.id || selectedProduct._id) ? (
-                <img
+                <ProductImage
                   src={productImageSrc(selectedProduct)}
                   alt={selectedProduct.model}
-                  className="aspect-square h-full w-full object-cover"
+                  className="relative h-full w-full object-contain p-4"
+                  fillClassName="relative h-full w-full object-cover"
                   onError={() => markImageBroken(selectedProduct.id || selectedProduct._id)}
                 />
               ) : (

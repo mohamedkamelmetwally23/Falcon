@@ -24,13 +24,13 @@ export default function ProductModal({ form, setForm, editing, close, submit, on
 
   const field = (key, label, type = 'text', placeholder = '', className = '') => <label className={`form-control w-full ${className}`}>
     <span className="label-text mb-1 text-xs font-medium text-base-content/60">{label}</span>
-    <input type={type} min={type === 'number' ? 0 : undefined} required value={form[key]} placeholder={placeholder} autoComplete="off" className="input w-full" onChange={event => update(key, event.target.value)}/>
+    <input type={type} min={type === 'number' ? 0 : undefined} value={form[key] ?? ''} placeholder={placeholder} autoComplete="off" className="input w-full" onChange={event => update(key, event.target.value)}/>
   </label>;
 
   const selectField = (key, label, options, className = '') => <label className={`form-control w-full ${className}`}>
     <span className="label-text mb-1 text-xs font-medium text-base-content/60">{label}</span>
-    <select required value={form[key] ?? ''} className="select w-full" onChange={event => update(key, event.target.value)}>
-      <option value="" disabled>{isArabic ? 'اختر' : 'Select'}</option>
+    <select value={form[key] ?? ''} className="select w-full" onChange={event => update(key, event.target.value)}>
+      <option value="">{isArabic ? 'اختر' : 'Select'}</option>
       {options.map(option => <option key={option} value={option}>{option}</option>)}
     </select>
   </label>;

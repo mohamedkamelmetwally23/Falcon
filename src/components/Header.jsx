@@ -17,12 +17,12 @@ export default function Header({ openAdd, page, user }) {
           </p>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
         <div className="hidden rounded-btn bg-base-200 px-3 py-1.5 text-sm sm:block">
           <b className="text-base-content">{user.name}</b>
         </div>
         <button
-          className="btn btn-ghost btn-sm"
+          className="btn btn-ghost btn-sm flex-1 sm:flex-none"
           onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
           title={isArabic ? 'English' : 'العربية'}
         >
@@ -30,7 +30,7 @@ export default function Header({ openAdd, page, user }) {
           <span>{isArabic ? 'EN' : 'عربي'}</span>
         </button>
         <button
-          className="btn btn-ghost btn-sm"
+          className="btn btn-ghost btn-sm flex-1 sm:flex-none"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
         >
@@ -38,7 +38,7 @@ export default function Header({ openAdd, page, user }) {
           <span>{theme === 'dark' ? (isArabic ? 'فاتح' : 'Light') : (isArabic ? 'داكن' : 'Dark')}</span>
         </button>
         {page === 'inventory' && (
-          <button className="btn btn-primary btn-sm" onClick={openAdd}>
+          <button className="btn btn-primary btn-sm w-full sm:w-auto" onClick={openAdd}>
             <Plus size={18} />
             <span>{isArabic ? 'إضافة جهاز جديد' : 'Add new device'}</span>
           </button>

@@ -411,6 +411,12 @@ export default function Orders({ orders, setOrders, isAdmin, loading, error }) {
                         </div>
                         <div className="flex items-center justify-between border-t border-base-300 pt-2">
                           <span className="text-sm text-base-content/60">
+                            {isArabic ? "إجمالي الكمية" : "Total quantity"}
+                          </span>
+                          <b>{lineItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0)}</b>
+                        </div>
+                        <div className="flex items-center justify-between border-t border-base-300 pt-2">
+                          <span className="text-sm text-base-content/60">
                             {isArabic ? "الإجمالي بعد الخصم" : "Total after discount"}
                           </span>
                           <b className="text-primary">
