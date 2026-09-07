@@ -396,12 +396,12 @@ export default function Storefront({ openLogin = () => {}, authenticated = false
       </section>
 
       {selectedProduct && <div className="modal modal-open" onMouseDown={event => event.target === event.currentTarget && setSelectedProduct(null)}>
-        <div className="modal-box max-w-3xl overflow-hidden p-0">
+        <div className="modal-box flex max-h-[92vh] max-w-3xl flex-col gap-0 overflow-hidden p-0">
           <div className="flex items-start justify-between gap-4 border-b border-base-300 p-5">
             <div><span className="text-xs font-bold tracking-widest text-primary">FALCON LAPTOP</span><h2 className="mt-1 text-2xl font-extrabold">{selectedProduct.brand} {selectedProduct.model}</h2></div>
             <button type="button" className="btn btn-circle btn-ghost btn-sm" onClick={() => setSelectedProduct(null)} aria-label={isArabic ? 'إغلاق' : 'Close'}><X size={19}/></button>
           </div>
-          <div className="grid gap-6 p-5 md:grid-cols-[.9fr_1.1fr]">
+          <div className="grid gap-6 overflow-y-auto p-5 md:grid-cols-[.9fr_1.1fr]">
             <div className="relative aspect-3/2 overflow-hidden rounded-box bg-base-300">
               {(selectedProduct.imageUrl || selectedProduct.image) && !brokenImages.has(selectedProduct.id || selectedProduct._id) ? (
                 <ProductImage
@@ -414,28 +414,26 @@ export default function Storefront({ openLogin = () => {}, authenticated = false
                 <div className="flex aspect-3/2 items-center justify-center"><Laptop size={90} className="text-base-content/30"/></div>
               )}
             </div>
-            <div className="flex flex-col justify-between gap-6">
-              <div>
-                <p className="text-base leading-8 text-base-content/70">{describeSpecs(selectedProduct, isArabic)}</p>
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  {detailFields.filter(([, value]) => value).map(([label, value]) => (
-                    <div key={label} className="rounded-box border border-base-300 bg-base-200 p-3"><span className="block text-xs text-base-content/50">{label}</span><b className="mt-1 block text-sm">{value}</b></div>
-                  ))}
-                </div>
+            <div className="flex flex-col gap-6">
+              <p className="text-base leading-8 text-base-content/70">{describeSpecs(selectedProduct, isArabic)}</p>
+              <div className="grid grid-cols-2 gap-3">
+                {detailFields.filter(([, value]) => value).map(([label, value]) => (
+                  <div key={label} className="rounded-box border border-base-300 bg-base-200 p-3"><span className="block text-xs text-base-content/50">{label}</span><b className="mt-1 block text-sm">{value}</b></div>
+                ))}
               </div>
-              <div>
-                <div className="rounded-box border border-primary/20 bg-primary/5 p-4">
-                  <span className="block text-xs text-base-content/50">{isArabic ? 'السعر' : 'Price'}</span>
-                  <div className="mt-1 flex items-baseline gap-3">
-                    {Number(selectedProduct.oldPrice) > 0 && <del className="text-sm text-base-content/50">{money(selectedProduct.oldPrice, language)}</del>}
-                    <strong className="text-3xl text-primary">{money(selectedProduct.price, language)}</strong>
-                  </div>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <a href="tel:+201116067708" className="btn btn-primary flex-1 gap-2"><Phone size={17}/> {isArabic ? 'اتصل الآن' : 'Call now'}</a>
-                  <a href="https://wa.me/201116067708" target="_blank" rel="noreferrer" className="btn btn-outline flex-1 gap-2"><MessageCircle size={17}/> WhatsApp</a>
-                </div>
+            </div>
+          </div>
+          <div className="border-t border-base-300 p-5">
+            <div className="rounded-box border border-primary/20 bg-primary/5 p-4">
+              <span className="block text-xs text-base-content/50">{isArabic ? 'السعر' : 'Price'}</span>
+              <div className="mt-1 flex items-baseline gap-3">
+                {Number(selectedProduct.oldPrice) > 0 && <del className="text-sm text-base-content/50">{money(selectedProduct.oldPrice, language)}</del>}
+                <strong className="text-3xl text-primary">{money(selectedProduct.price, language)}</strong>
               </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <a href="tel:+201116067708" className="btn btn-primary flex-1 gap-2"><Phone size={17}/> {isArabic ? 'اتصل الآن' : 'Call now'}</a>
+              <a href="https://wa.me/201116067708" target="_blank" rel="noreferrer" className="btn btn-outline flex-1 gap-2"><MessageCircle size={17}/> WhatsApp</a>
             </div>
           </div>
         </div>
