@@ -43,21 +43,24 @@ function HeroChip({ icon, label }) {
   );
 }
 
-function ProductImage({ src, alt, className, fillClassName, onError }) {
+function describeSpecs(product) {
+  const parts = [];
+  if (product.processor) {
+    let text = `معالج ${product.processor}`;
+    if (product.generation) text += ` من الجيل ${product.generation}`;
+    if (product.processorType) text += ` فئة ${product.processorType}`;
+    parts.push(text);
+  }
+  if (product.ram) parts.push(`رام ${product.ram}`);
+  if (product.storage) parts.push(`مساحة تخزين ${product.storage}`);
+  if (product.graphics) parts.push(`كارت شاشة ${product.graphics}`);
+  if (!parts.length) return `جهاز ${product.brand} ${product.model} مختار بعناية من FALCON.`;
+  return `جهاز ${product.brand} ${product.model} مجهز بـ${parts.join('، ')}، جاهز للاستخدام اليومي والعمل.`;
+}
+
+function ProductImage({ src, alt, className, onError }) {
   const trimmedSrc = useTrimmedImage(src);
-  const shownSrc = trimmedSrc || src;
-  const fitClassName = trimmedSrc ? fillClassName : className;
-  return (
-    <>
-      <img
-        src={shownSrc}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full scale-125 object-cover object-center opacity-40 blur-lg"
-      />
-      <img src={shownSrc} alt={alt} className={fitClassName} onError={onError} />
-    </>
-  );
+  return <img src={trimmedSrc || src} alt={alt} className={className} onError={onError} />;
 }
 
 export default function Storefront({ openLogin = () => {}, authenticated = false, onLogout, user }) {
@@ -102,8 +105,10 @@ export default function Storefront({ openLogin = () => {}, authenticated = false
       <nav dir="ltr" className="sticky top-0 z-50 border-b border-base-300 bg-base-100/80 backdrop-blur-md">
         <div className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-3 sm:px-8">
           <a href="#top" className="flex flex-col justify-self-start leading-tight">
-            <span className="text-lg font-extrabold tracking-tight">
-              FALCON<span className="text-primary">LAPTOP</span>
+            <span className="flex items-center gap-2 text-lg font-extrabold tracking-tight">
+              FALCON
+              <span className="h-4 w-px bg-base-content/20" />
+              <span className="text-primary">LAPTOP</span>
             </span>
             <span className="text-xs font-medium text-base-content/50">أفضل الأجهزة، أفضل الأسعار</span>
           </a>
@@ -277,14 +282,13 @@ export default function Storefront({ openLogin = () => {}, authenticated = false
                 key={product.id || product._id || index}
                 className="card group border border-base-300 bg-base-200 transition hover:-translate-y-1 hover:shadow-xl"
               >
-                <figure className="relative aspect-video overflow-hidden bg-base-300">
+                <figure className="relative aspect-3/2 overflow-hidden bg-base-300">
                   <span className="badge badge-primary absolute top-3 inset-s-3 z-10">متاح: {product.quantity}</span>
                   {(product.imageUrl || product.image) && !brokenImages.has(product.id || product._id) ? (
                     <ProductImage
                       src={productImageSrc(product)}
                       alt={product.model}
-                      className="relative h-full w-full object-contain p-3 transition duration-500 group-hover:scale-105"
-                      fillClassName="relative h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
                       onError={() => markImageBroken(product.id || product._id)}
                     />
                   ) : (
@@ -295,10 +299,10 @@ export default function Storefront({ openLogin = () => {}, authenticated = false
                 <div className="card-body gap-2">
                   <span className="text-xs font-semibold text-primary">{product.brand}</span>
                   <h3 className="card-title text-lg">{product.model}</h3>
-                  <p className="text-sm text-base-content/70">{product.processor || 'أداء عملي يومي'}</p>
+                  <p className="text-sm text-base-content/70">{product.processor ? `المعالج: ${product.processor}` : 'أداء عملي يومي'}</p>
                   <div className="flex flex-wrap gap-2">
-                    <span className="badge badge-outline">{product.ram || '8 GB RAM'}</span>
-                    <span className="badge badge-outline">{product.storage || '256 GB SSD'}</span>
+                    <span className="badge badge-outline">رام {product.ram || '8 GB'}</span>
+                    <span className="badge badge-outline">تخزين {product.storage || '256 GB'}</span>
                   </div>
                   <div className="card-actions mt-2 items-center justify-between">
                     <div className="flex flex-col items-start gap-1">
@@ -335,21 +339,20 @@ export default function Storefront({ openLogin = () => {}, authenticated = false
             <button type="button" className="btn btn-circle btn-ghost btn-sm" onClick={() => setSelectedProduct(null)} aria-label="إغلاق"><X size={19}/></button>
           </div>
           <div className="grid gap-6 p-5 md:grid-cols-[.9fr_1.1fr]">
-            <div className="relative aspect-square overflow-hidden rounded-box bg-base-300">
+            <div className="relative aspect-3/2 overflow-hidden rounded-box bg-base-300">
               {(selectedProduct.imageUrl || selectedProduct.image) && !brokenImages.has(selectedProduct.id || selectedProduct._id) ? (
                 <ProductImage
                   src={productImageSrc(selectedProduct)}
                   alt={selectedProduct.model}
-                  className="relative h-full w-full object-contain p-4"
-                  fillClassName="relative h-full w-full object-cover"
+                  className="h-full w-full object-contain"
                   onError={() => markImageBroken(selectedProduct.id || selectedProduct._id)}
                 />
               ) : (
-                <div className="flex aspect-square items-center justify-center"><Laptop size={90} className="text-base-content/30"/></div>
+                <div className="flex aspect-3/2 items-center justify-center"><Laptop size={90} className="text-base-content/30"/></div>
               )}
             </div>
             <div className="flex flex-col justify-between gap-6">
-              <div><p className="text-base leading-8 text-base-content/70">جهاز مختار بعناية من FALCON، بمواصفات واضحة وتجهيز مناسب للاستخدام اليومي والعمل.</p><div className="mt-5 grid grid-cols-2 gap-3">{[['المعالج', selectedProduct.processor], ['الرام', selectedProduct.ram], ['التخزين', selectedProduct.storage], ['الجيل', selectedProduct.generation], ['الفئة', selectedProduct.processorType], ['كارت الشاشة', selectedProduct.graphics], ['الكمية المتاحة', selectedProduct.quantity]].filter(([, value]) => value).map(([label, value]) => <div key={label} className="rounded-box border border-base-300 bg-base-200 p-3"><span className="block text-xs text-base-content/50">{label}</span><b className="mt-1 block text-sm">{value}</b></div>)}</div></div>
+              <div><p className="text-base leading-8 text-base-content/70">{describeSpecs(selectedProduct)}</p><div className="mt-5 grid grid-cols-2 gap-3">{[['المعالج', selectedProduct.processor], ['الرام', selectedProduct.ram], ['التخزين', selectedProduct.storage], ['الجيل', selectedProduct.generation], ['الفئة', selectedProduct.processorType], ['كارت الشاشة', selectedProduct.graphics], ['الكمية المتاحة', selectedProduct.quantity]].filter(([, value]) => value).map(([label, value]) => <div key={label} className="rounded-box border border-base-300 bg-base-200 p-3"><span className="block text-xs text-base-content/50">{label}</span><b className="mt-1 block text-sm">{value}</b></div>)}</div></div>
               <div><div className="rounded-box border border-primary/20 bg-primary/5 p-4"><span className="block text-xs text-base-content/50">السعر</span><div className="mt-1 flex items-baseline gap-3">{Number(selectedProduct.oldPrice) > 0 && <del className="text-sm text-base-content/50">{money(selectedProduct.oldPrice)}</del>}<strong className="text-3xl text-primary">{money(selectedProduct.price)}</strong></div></div><div className="mt-4 flex flex-wrap gap-2"><a href="tel:+201116067708" className="btn btn-primary flex-1 gap-2"><Phone size={17}/> اتصل الآن</a><a href="https://wa.me/201116067708" target="_blank" rel="noreferrer" className="btn btn-outline flex-1 gap-2"><MessageCircle size={17}/> واتساب</a></div></div>
             </div>
           </div>
